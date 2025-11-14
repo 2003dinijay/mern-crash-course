@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -13,8 +14,11 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  timestamp: true //make sure you have createdAt, updatedAt fields on each document
+},{
+    timestamps: true //make sure you have createdAt, updatedAt fields on each document
+  
 });
+  
 
 //creating product model
 const Product = mongoose.model('Product', productSchema);
