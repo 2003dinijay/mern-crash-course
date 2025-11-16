@@ -25,7 +25,7 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.post('/products', async (req, res) => {
+app.post('/api/products', async (req, res) => {
   const product= req.body; //user will send product data in the request body
 
   //required fields validation
@@ -57,7 +57,7 @@ app.put('/api/products/:id', async (req, res) => {
     res.status(200).json({success: true, data: updatedProduct });
   } catch (error) {
       res.status(500).json({success: false, message: 'Server Error: Unable to update product.' });  
-    }
+  }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
