@@ -6,7 +6,7 @@ function App() {
     <>
      <Button>Hello</Button>
     </>
-  )
+  ); 
 }
 
 export default App
