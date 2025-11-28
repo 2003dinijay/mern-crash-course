@@ -24,7 +24,7 @@ const Navbar = () => {
 					fontWeight={"bold"}
 					textTransform={"uppercase"}
 					textAlign={"center"}
-					bgGradient={"linear(to-r, green.400, yellow.500)"}
+					bgGradient={"linear(to-r, cyan.400, blue.500)"}
 					bgClip={"text"}
 				>
 					<Link to={"/"}>Product Store 🛒</Link>
