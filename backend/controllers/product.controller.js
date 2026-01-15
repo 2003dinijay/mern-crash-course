@@ -1,86 +1,135 @@
+import * as productService from '../services/product.service.js';
+import {
+  validateCreateProduct,
+  validateUpdateProduct,
+  validateProductId,
+  sanitizeProductResponse,
+} from '../dto/product.dto.js';
 
-import Product from '../models/product.model.js';
-import mongoose from 'mongoose';
-
+//get products controller
 export const getProducts = async (req, res) => {
-  try{
-    const products = await Product.find({});
-    res.status(200).json({success: true, data: products });  
+  try {
+    const result = await productService.getAllProducts();
+    
+    // Sanitize response data
+    const sanitizedProducts = result.data.map(sanitizeProductResponse);
+    
+    res.status(200).json({ success: true, data: sanitizedProducts });
   } catch (error) {
-
-    //adding console log for debugging purpose
-
-    console.error('Error in fetching products:', error.message);
-    res.status(500).json({success: false, message: 'Server Error: Unable to fetch products.' });
+    res.status(500).json({
+      success: false,
+      message: 'Server Error: Unable to fetch products.',
+    });
   }
 };
+
+//create product controller
 export const createProduct = async (req, res) => {
-  const product= req.body; //user will send product data in the request body
+  // Validate and sanitize input data
+  const validation = validateCreateProduct(req.body);
 
-  //required fields validation
-  if (!product.name || !product.price || !product.image) {
-    return res.status(400).json({ success:false, message: 'Please provide name, price, and image for the product.' });
+  if (!validation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: validation.errors,
+    });
   }
-  const newProduct = new Product(product);
 
   try {
-    await newProduct.save();
-    res.status(201).json({success: true, data: newProduct });
+    const result = await productService.createNewProduct(validation.data);
+    
+    // Sanitize response data
+    const sanitizedProduct = sanitizeProductResponse(result.data);
+    
+    res.status(201).json({ success: true, data: sanitizedProduct });
   } catch (error) {
-   console.error('Error creating product:', error.message);
-   res.status(500).json({success: false, message: 'Server Error: Unable to save product.' });
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server Error: Unable to save product.',
+    });
   }
 };
 
+//update product controller
 export const updateProduct = async (req, res) => {
-  const {id} = req.params;
-  
-  // Sanitize ID by trimming whitespace and newlines
-  const sanitizedId = id.trim();
+  const { id } = req.params;
 
-  const product = req.body;
+  // Validate product ID
+  const idValidation = validateProductId(id);
+  if (!idValidation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: idValidation.error,
+    });
+  }
 
-  if (!mongoose.Types.ObjectId.isValid(sanitizedId)) {
-    return res.status(404).json({success: false, message: 'Invalid product ID.' });
+  // Validate and sanitize update data
+  const dataValidation = validateUpdateProduct(req.body);
+  if (!dataValidation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: dataValidation.errors,
+    });
   }
 
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(sanitizedId, product, {new: true});
-    
-    // Check if product exists
-    if (!updatedProduct) {
-      return res.status(404).json({success: false, message: 'Product not found.' });
+    const result = await productService.updateProductById(
+      idValidation.id,
+      dataValidation.data
+    );
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        message: result.error,
+      });
     }
+
+    // Sanitize response data
+    const sanitizedProduct = sanitizeProductResponse(result.data);
     
-    res.status(200).json({success: true, data: updatedProduct });
+    res.status(200).json({ success: true, data: sanitizedProduct });
   } catch (error) {
-      console.error('Error updating product:', error.message);
-      res.status(500).json({success: false, message: 'Server Error: Unable to update product.' });  
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server Error: Unable to update product.',
+    });
   }
 };
 
-export const deleteProduct =  async (req, res) => {
-  const {id} = req.params;
-  
-  // Sanitize ID by trimming whitespace and newlines
-  const sanitizedId = id.trim();
-  
-  // Validate ObjectId format
-  if (!mongoose.Types.ObjectId.isValid(sanitizedId)) {
-    return res.status(400).json({success: false, message: 'Invalid product ID format.' });
+//delete product controller
+export const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+
+  // Validate product ID
+  const idValidation = validateProductId(id);
+  if (!idValidation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: idValidation.error,
+    });
   }
-  
+
   try {
-    const deletedProduct = await Product.findByIdAndDelete(sanitizedId);
-    
-    // Check if product was found and deleted
-    if (!deletedProduct) {
-      return res.status(404).json({success: false, message: 'Product not found. Please add a valid product id.' });
+    const result = await productService.deleteProductById(idValidation.id);
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        message: result.error,
+      });
     }
-    
-    res.status(200).json({success: true, message: 'Product deleted successfully' });
+
+    res.status(200).json({
+      success: true,
+      message: 'Product deleted successfully',
+    });
   } catch (error) {
-    console.error('Error deleting product:', error.message);
-    res.status(500).json({success: false, message: 'Server Error: Unable to delete product.' });
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server Error: Unable to delete product.',
+    });
   }
 };
